@@ -4,7 +4,7 @@ A mobile street art discovery app built with React Native/Expo - combining inter
 
 ## Overview
 **Graffiti Maps** is a mobile application (MVP) that helps users discover street art. Current features:
-- Interactive map with custom graffiti pin markers
+- Card-based graffiti feed (Expo Go compatible)
 - Anonymous authentication using device ID (no signup required)
 - Like and save functionality with local persistence
 - User profile with Instagram-style grid layout
@@ -41,12 +41,14 @@ The database schema is complete and ready for backend:
 - API structure documented in README
 
 ## Recent Changes (2025-10-31)
-- Built interactive map with custom image markers
+- Built card-based graffiti feed (Expo Go compatible)
+- Fixed react-native-maps compatibility issue (requires dev build)
 - Implemented anonymous auth with device IDs
-- Created user profile with tabbed interface
+- Created user profile with tabbed interface  
 - Added like/save functionality with AsyncStorage
 - Designed complete database schema
 - Set up Expo workflow on port 8080
+- App now works perfectly in Expo Go!
 
 ## User Preferences
 - Mobile-first design

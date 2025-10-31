@@ -4,11 +4,13 @@ A mobile street art discovery app built with React Native/Expo - think Snap Map 
 
 ## Features
 
-### 🗺️ Interactive Map
-- View graffiti pins on an interactive map
-- Custom image-based markers showing thumbnail previews
-- Tap markers to view pin details
-- Map clustering support included
+### 🗺️ Discover Street Art
+- Browse graffiti pins in a card-based feed
+- Beautiful photo cards with artist info
+- Tap to like pins directly from the feed
+- Detailed pin information with tags and locations
+
+**Note**: The app uses a card-based view instead of an interactive map for Expo Go compatibility. For a real map with markers, you'll need to create a development build (`npx expo run:ios` or `npx expo run:android`).
 
 ### 👤 User Profile
 - Anonymous authentication using device ID (no signup required!)
@@ -25,10 +27,12 @@ A mobile street art discovery app built with React Native/Expo - think Snap Map 
 ## Tech Stack
 
 - **Frontend**: React Native with Expo Router
-- **Maps**: react-native-maps with clustering
+- **UI**: Card-based feed (Expo Go compatible)
 - **Database**: PostgreSQL with Drizzle ORM (schema ready for backend)
 - **CMS**: Notion API integration (for future admin use)
 - **State**: AsyncStorage for local data persistence
+
+**Why No Map?** react-native-maps requires native modules that don't work in Expo Go. To add an interactive map, you'll need to create a development build with `npx expo prebuild` and `npx expo run:ios`/`npx expo run:android`.
 
 ## Getting Started
 
@@ -69,18 +73,19 @@ npx expo start --web --port 8080
 ## Current Features
 
 **✅ Implemented:**
-- Interactive map with graffiti pins
-- Custom image markers
+- Card-based graffiti feed (works in Expo Go!)
+- Like functionality with heart icon
 - Anonymous authentication (device ID based)
 - User profile with liked/saved tabs
 - Instagram-style photo grid
-- Local data persistence
-- Database schema ready for backend
+- Local data persistence with AsyncStorage
+- Complete database schema ready for backend
 
-**🚧 Coming Soon:**
+**🚧 Next Steps:**
+- Interactive map (requires development build, not Expo Go)
 - Backend API integration
-- Photo carousel viewer
-- Search and filters
+- Full-screen photo carousel viewer
+- Search and filter UI
 - Camera integration for submissions
 - Notion CMS sync for admin
 
