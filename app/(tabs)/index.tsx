@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Alert, ScrollView, FlatList } from 'react-native';
 import { Image } from 'expo-image';
-import * as Location from 'expo-location';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { useGraffitiData } from '@/lib/hooks/useGraffitiData';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -14,45 +13,28 @@ export default function MapScreen() {
   const { pins, toggleLike, likedPins, loading: dataLoading, getArtistById } = useGraffitiData();
   const { loading: authLoading } = useAuth();
   const colorScheme = useColorScheme();
-  const mapRef = useRef<MapView>(null);
-  const [userLocation, setUserLocation] = useState<Location.LocationObjectCoords | null>(null);
-  const [selectedPin, setSelectedPin] = useState<any>(null);
 
   const loading = dataLoading || authLoading;
 
   const activePins = pins.filter(p => p.status === 'active');
 
-  // Request location permissions and get user location
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const location = await Location.getCurrentPositionAsync({});
-          setUserLocation(location.coords);
-        }
-      } catch (error) {
-        console.log('Error getting location:', error);
-      }
-    })();
-  }, []);
+  const handlePinPress = (pinId: number) => {
+    const pin = pins.find(p => p.id === pinId);
+    const artist = pin?.artistId ? getArtistById(pin.artistId) : null;
 
-  const handleMarkerPress = (pin: any) => {
-    setSelectedPin(pin);
-    const artist = pin.artistId ? getArtistById(pin.artistId) : null;
-
-    Alert.alert(
-      pin.name,
-      `${pin.description || 'No description'}\n\n📍 ${pin.city}\n🎨 ${pin.styleTags?.join(', ') || 'No tags'}\n${artist ? `👤 ${artist.handle}` : ''}`,
-      [
-        {
-          text: likedPins.includes(pin.id) ? '💔 Unlike' : '❤️ Like',
-          onPress: () => toggleLike(pin.id)
-        },
-        { text: 'Close', style: 'cancel', onPress: () => setSelectedPin(null) }
-      ],
-      { onDismiss: () => setSelectedPin(null) }
-    );
+    if (pin) {
+      Alert.alert(
+        pin.name,
+        `${pin.description || 'No description'}\n\n📍 ${pin.city}\n🎨 ${pin.styleTags?.join(', ') || 'No tags'}\n${artist ? `👤 ${artist.handle}` : ''}`,
+        [
+          {
+            text: likedPins.includes(pinId) ? '💔 Unlike' : '❤️ Like',
+            onPress: () => toggleLike(pinId)
+          },
+          { text: 'Close', style: 'cancel' }
+        ]
+      );
+    }
   };
 
   const handleAddPin = () => {
@@ -61,24 +43,6 @@ export default function MapScreen() {
       'This feature will let you add new street art!\n\n📸 Camera integration\n📍 Location tagging\n🎨 Style categorization',
       [{ text: 'Coming Soon!' }]
     );
-  };
-
-  const handleMyLocation = async () => {
-    try {
-      const location = await Location.getCurrentPositionAsync({});
-      setUserLocation(location.coords);
-
-      if (mapRef.current) {
-        mapRef.current.animateToRegion({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }, 1000);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Could not get your location');
-    }
   };
 
   if (loading) {
@@ -90,56 +54,68 @@ export default function MapScreen() {
     );
   }
 
-  // Default to NYC area
-  const initialRegion = {
-    latitude: activePins.length > 0 ? activePins[0].latitude : 40.7589,
-    longitude: activePins.length > 0 ? activePins[0].longitude : -73.9851,
-    latitudeDelta: 0.1,
-    longitudeDelta: 0.1,
-  };
-
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        provider={PROVIDER_DEFAULT} // Use default provider (Apple Maps on iOS)
-        initialRegion={initialRegion}
-        showsUserLocation={true}
-        showsMyLocationButton={false}
-        showsCompass={true}
-      >
-        {activePins.map((pin) => (
-          <Marker
-            key={pin.id}
-            coordinate={{
-              latitude: pin.latitude,
-              longitude: pin.longitude,
-            }}
-            onPress={() => handleMarkerPress(pin)}
-            pinColor={likedPins.includes(pin.id) ? '#ff6b6b' : Colors[colorScheme ?? 'light'].tint}
-          />
-        ))}
-      </MapView>
+      <ScrollView style={styles.scrollView}>
+        <ThemedView style={styles.header}>
+          <IconSymbol name="location" size={32} color={Colors[colorScheme ?? 'light'].tint} />
+          <ThemedText style={styles.headerText}>Discover Street Art</ThemedText>
+          <ThemedText style={styles.subHeader}>NYC • {activePins.length} pieces</ThemedText>
+          <ThemedText style={styles.expoGoNote}>
+            🎨 Expo Go Mode - Card Feed
+          </ThemedText>
+        </ThemedView>
 
-      {/* Info banner */}
-      <View style={styles.infoBanner}>
-        <IconSymbol name="location" size={24} color={Colors[colorScheme ?? 'light'].tint} />
-        <View style={styles.infoText}>
-          <ThemedText style={styles.infoTitle}>Street Art Map</ThemedText>
-          <ThemedText style={styles.infoSubtitle}>{activePins.length} pieces nearby</ThemedText>
-        </View>
-      </View>
+        <FlatList
+          data={activePins}
+          scrollEnabled={false}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => {
+            const artist = item.artistId ? getArtistById(item.artistId) : null;
+            const isLiked = likedPins.includes(item.id);
 
-      {/* My location button */}
-      <TouchableOpacity
-        style={[styles.locationButton, { backgroundColor: 'white' }]}
-        onPress={handleMyLocation}
-      >
-        <IconSymbol name="location.fill" size={24} color={Colors[colorScheme ?? 'light'].tint} />
-      </TouchableOpacity>
+            return (
+              <TouchableOpacity
+                style={styles.pinCard}
+                onPress={() => handlePinPress(item.id)}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={{ uri: item.images[0] }}
+                  style={styles.pinImage}
+                  contentFit="cover"
+                />
+                <View style={styles.pinInfo}>
+                  <View style={styles.pinHeader}>
+                    <ThemedText style={styles.pinName}>{item.name}</ThemedText>
+                    <TouchableOpacity onPress={() => toggleLike(item.id)}>
+                      <IconSymbol
+                        name={isLiked ? 'heart.fill' : 'heart'}
+                        size={24}
+                        color={isLiked ? '#ff6b6b' : '#999'}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <ThemedText style={styles.pinLocation}>📍 {item.city}</ThemedText>
+                  {artist && (
+                    <ThemedText style={styles.pinArtist}>by {artist.handle}</ThemedText>
+                  )}
+                  {item.styleTags && item.styleTags.length > 0 && (
+                    <View style={styles.tagsContainer}>
+                      {item.styleTags.map((tag, index) => (
+                        <View key={index} style={styles.tag}>
+                          <ThemedText style={styles.tagText}>{tag}</ThemedText>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </ScrollView>
 
-      {/* Add pin FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
         onPress={handleAddPin}
@@ -154,9 +130,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  map: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
+  scrollView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -167,54 +142,89 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
   },
-  infoBanner: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
+  header: {
+    padding: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
-  infoText: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: 18,
+  headerText: {
+    fontSize: 24,
     fontWeight: 'bold',
+    marginTop: 8,
   },
-  infoSubtitle: {
+  subHeader: {
     fontSize: 14,
     opacity: 0.6,
-    marginTop: 2,
+    marginTop: 4,
   },
-  locationButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 160,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+  expoGoNote: {
+    fontSize: 12,
+    opacity: 0.5,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  pinCard: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 3,
+  },
+  pinImage: {
+    width: '100%',
+    height: 200,
+  },
+  pinInfo: {
+    padding: 16,
+  },
+  pinHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  pinName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  pinLocation: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  pinArtist: {
+    fontSize: 14,
+    opacity: 0.6,
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  tag: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  tagText: {
+    fontSize: 12,
+    color: '#666',
   },
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 90,
+    bottom: 80,
     width: 60,
     height: 60,
     borderRadius: 30,
