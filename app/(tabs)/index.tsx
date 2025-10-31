@@ -1,80 +1,138 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { Image } from 'expo-image';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { ThemedText } from '@/components/ThemedText';
+import { useGraffitiData } from '@/lib/hooks/useGraffitiData';
+import { useAuth } from '@/lib/hooks/useAuth';
 
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+export default function MapScreen() {
+  const { pins, loading: dataLoading } = useGraffitiData();
+  const { loading: authLoading } = useAuth();
+  const colorScheme = useColorScheme();
 
-export default function HomeScreen() {
+  const loading = dataLoading || authLoading;
+
+  const activePins = pins.filter(p => p.status === 'active');
+
+  const handleMarkerPress = (pinId: number) => {
+    const pin = pins.find(p => p.id === pinId);
+    if (pin) {
+      Alert.alert(
+        pin.name,
+        `${pin.description}\n\nCity: ${pin.city}\nStyles: ${pin.styleTags?.join(', ') || 'None'}`,
+        [
+          { text: 'Close', style: 'cancel' },
+          { text: 'View Details', onPress: () => console.log('Navigate to pin details') }
+        ]
+      );
+    }
+  };
+
+  const handleAddPin = () => {
+    Alert.alert(
+      'Add Graffiti Pin',
+      'This feature will let you add new street art to the map!',
+      [{ text: 'Coming Soon!' }]
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} />
+        <ThemedText style={styles.loadingText}>Loading street art...</ThemedText>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Replit + Expo</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        provider={PROVIDER_DEFAULT}
+        initialRegion={{
+          latitude: 40.7589,
+          longitude: -73.9851,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }}
+      >
+        {activePins.map((pin) => (
+          <Marker
+            key={pin.id}
+            coordinate={{
+              latitude: pin.latitude,
+              longitude: pin.longitude,
+            }}
+            onPress={() => handleMarkerPress(pin.id)}
+          >
+            <View style={styles.markerContainer}>
+              <Image
+                source={{ uri: pin.images[0] }}
+                style={styles.markerImage}
+                contentFit="cover"
+              />
+            </View>
+          </Marker>
+        ))}
+      </MapView>
+
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: Colors[colorScheme ?? 'light'].tint }]}
+        onPress={handleAddPin}
+      >
+        <IconSymbol name="plus" size={28} color="#fff" />
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  mapPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  placeholderText: {
+    marginTop: 16,
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  subText: {
+    marginTop: 8,
+    fontSize: 14,
+    opacity: 0.6,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 80,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
 });

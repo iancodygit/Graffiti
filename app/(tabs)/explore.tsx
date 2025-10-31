@@ -1,110 +1,216 @@
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, View, TouchableOpacity, TextInput, FlatList } from 'react-native';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useGraffitiData } from '@/lib/hooks/useGraffitiData';
 
-export default function TabTwoScreen() {
+export default function ProfileScreen() {
+  const { user, changeUsername } = useAuth();
+  const { likedPins, savedPins, getPinsByIds, getArtistById } = useGraffitiData();
+  const [localUsername, setLocalUsername] = useState(user?.username || 'Guest User');
+  const [activeTab, setActiveTab] = useState<'liked' | 'saved' | 'submissions'>('liked');
+  const colorScheme = useColorScheme();
+
+  const handleUsernameBlur = () => {
+    if (localUsername !== user?.username && localUsername.trim()) {
+      changeUsername(localUsername);
+    }
+  };
+
+  const likedPinData = getPinsByIds(likedPins);
+  const savedPinData = getPinsByIds(savedPins);
+  const submissionData: any[] = [];
+
+  const currentData = activeTab === 'liked' ? likedPinData : activeTab === 'saved' ? savedPinData : submissionData;
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
+    <ScrollView style={styles.container}>
+      <ThemedView style={styles.header}>
+        <View style={styles.avatarCircle}>
+          <IconSymbol name="paperplane.fill" size={40} color={Colors[colorScheme ?? 'light'].tint} />
+        </View>
+        <TextInput
+          style={[styles.usernameInput, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
+          value={localUsername}
+          onChangeText={setLocalUsername}
+          onBlur={handleUsernameBlur}
+          placeholder="Your username"
+          placeholderTextColor="#999"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <ThemedText style={styles.statNumber}>{submissionData.length}</ThemedText>
+            <ThemedText style={styles.statLabel}>Submissions</ThemedText>
+          </View>
+          <View style={styles.statItem}>
+            <ThemedText style={styles.statNumber}>{likedPins.length}</ThemedText>
+            <ThemedText style={styles.statLabel}>Liked</ThemedText>
+          </View>
+          <View style={styles.statItem}>
+            <ThemedText style={styles.statNumber}>{savedPins.length}</ThemedText>
+            <ThemedText style={styles.statLabel}>Saved</ThemedText>
+          </View>
+        </View>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
+
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'liked' && styles.activeTab]}
+          onPress={() => setActiveTab('liked')}
+        >
+          <IconSymbol 
+            name={activeTab === 'liked' ? 'heart.fill' : 'heart'} 
+            size={24} 
+            color={activeTab === 'liked' ? Colors[colorScheme ?? 'light'].tint : '#999'} 
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'saved' && styles.activeTab]}
+          onPress={() => setActiveTab('saved')}
+        >
+          <IconSymbol 
+            name={activeTab === 'saved' ? 'bookmark.fill' : 'bookmark'} 
+            size={24} 
+            color={activeTab === 'saved' ? Colors[colorScheme ?? 'light'].tint : '#999'} 
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'submissions' && styles.activeTab]}
+          onPress={() => setActiveTab('submissions')}
+        >
+          <IconSymbol 
+            name="camera" 
+            size={24} 
+            color={activeTab === 'submissions' ? Colors[colorScheme ?? 'light'].tint : '#999'} 
+          />
+        </TouchableOpacity>
+      </View>
+
+      {currentData.length === 0 ? (
+        <View style={styles.emptyState}>
+          <IconSymbol name={activeTab === 'liked' ? 'heart' : activeTab === 'saved' ? 'bookmark' : 'camera'} size={64} color="#ccc" />
+          <ThemedText style={styles.emptyText}>
+            {activeTab === 'liked' ? 'No liked pins yet' : activeTab === 'saved' ? 'No saved pins yet' : 'No submissions yet'}
           </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+          <ThemedText style={styles.emptySubtext}>
+            {activeTab === 'submissions' ? 'Tap the + button on the map to add your first graffiti pin!' : 'Explore the map to discover amazing street art'}
+          </ThemedText>
+        </View>
+      ) : (
+        <FlatList
+          data={currentData}
+          numColumns={3}
+          scrollEnabled={false}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.gridItem}>
+              <Image
+                source={{ uri: item.images[0] }}
+                style={styles.gridImage}
+                contentFit="cover"
+              />
+            </TouchableOpacity>
+          )}
+          columnWrapperStyle={styles.row}
+        />
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
   },
-  titleContainer: {
+  header: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  avatarCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  usernameInput: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 24,
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    minWidth: 200,
+  },
+  statsContainer: {
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    fontSize: 14,
+    opacity: 0.6,
+    marginTop: 4,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#0a7ea4',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 32,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    opacity: 0.6,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  row: {
+    gap: 2,
+  },
+  gridItem: {
+    flex: 1,
+    aspectRatio: 1,
+    margin: 1,
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
   },
 });

@@ -1,50 +1,118 @@
-# Welcome to your Expo app 👋
+# Graffiti Maps 🎨
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile street art discovery app built with React Native/Expo - think Snap Map meets Instagram for graffiti!
 
-## Get started
+## Features
 
-1. Install dependencies
+### 🗺️ Interactive Map
+- View graffiti pins on an interactive map
+- Custom image-based markers showing thumbnail previews
+- Tap markers to view pin details
+- Map clustering support included
 
-   ```bash
-   npm install
-   ```
+### 👤 User Profile
+- Anonymous authentication using device ID (no signup required!)
+- View liked and saved pins
+- Instagram-style grid layout
+- Editable username
 
-2. Start the app
+### 🎯 Core Functionality (MVP)
+- **Map View**: Browse street art locations with custom pin markers
+- **Profile**: Track your liked pins and saved favorites
+- **Mock Data**: Sample graffiti pins from NYC
+- **Local Storage**: Likes and saves persist locally
 
-   ```bash
-   npx expo start
-   ```
+## Tech Stack
 
-In the output, you'll find options to open the app in a
+- **Frontend**: React Native with Expo Router
+- **Maps**: react-native-maps with clustering
+- **Database**: PostgreSQL with Drizzle ORM (schema ready for backend)
+- **CMS**: Notion API integration (for future admin use)
+- **State**: AsyncStorage for local data persistence
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Getting Started
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Install dependencies:
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Start the Expo development server:
+```bash
+npx expo start --web --port 8080
+```
 
-## Learn more
+3. Open the app:
+- Press `w` to open in web browser
+- Scan QR code with Expo Go app on mobile
+- Press `a` for Android emulator
+- Press `i` for iOS simulator
 
-To learn more about developing your project with Expo, look at the following resources:
+## Project Structure
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```
+├── app/
+│   └── (tabs)/
+│       ├── index.tsx       # Map screen
+│       └── explore.tsx     # Profile screen
+├── lib/
+│   ├── hooks/              # Custom React hooks
+│   │   ├── useAuth.ts      # Anonymous authentication
+│   │   └── useGraffitiData.ts  # Data management
+│   ├── types/              # TypeScript types
+│   └── mock-data.ts        # Sample graffiti pins
+├── shared/
+│   └── schema.ts           # Database schema
+└── components/             # Reusable UI components
+```
 
-## Join the community
+## Current Features
 
-Join our community of developers creating universal apps.
+**✅ Implemented:**
+- Interactive map with graffiti pins
+- Custom image markers
+- Anonymous authentication (device ID based)
+- User profile with liked/saved tabs
+- Instagram-style photo grid
+- Local data persistence
+- Database schema ready for backend
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+**🚧 Coming Soon:**
+- Backend API integration
+- Photo carousel viewer
+- Search and filters
+- Camera integration for submissions
+- Notion CMS sync for admin
+
+## Database Schema
+
+The app includes a complete PostgreSQL schema design:
+
+- **graffiti_pins**: Street art locations with images, tags, and metadata
+- **artists**: Artist profiles and social links
+- **users**: Anonymous users (device ID based)
+- **likes**: User likes on pins
+- **saved_pins**: User bookmarks
+
+Run `npm run db:push` to sync schema to database (requires DATABASE_URL).
+
+## Adding a Backend
+
+To connect to a real backend:
+
+1. Create a Node.js/Express API server
+2. Implement REST endpoints matching the schema
+3. Update `lib/hooks/useGraffitiData.ts` to fetch from API
+4. Enable Notion sync for admin content management
+
+Reference backend implementation available in commit history.
+
+## Learn More
+
+- [Expo documentation](https://docs.expo.dev/)
+- [React Native Maps](https://github.com/react-native-maps/react-native-maps)
+- [Drizzle ORM](https://orm.drizzle.team/)
+
+## License
+
+MIT
